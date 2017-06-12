@@ -34,6 +34,7 @@ public class Boot {
     private static AtomicInteger msgCnt = new AtomicInteger(1);
 
     private ScheduledExecutorService sheduler = Executors.newScheduledThreadPool(1, new ThreadFactoryBuilder().setNameFormat("scheduler-%d").build());
+    private ScheduledExecutorService reloader = Executors.newScheduledThreadPool(1, new ThreadFactoryBuilder().setNameFormat("reloader-%d").build());
     private ExecutorService sendService = Executors.newFixedThreadPool(senderNumber, new ThreadFactoryBuilder().setNameFormat("sender-%d").build());
 
     private static String testMsg = null;
@@ -50,11 +51,11 @@ public class Boot {
 
     private void start() {
         sheduler.scheduleAtFixedRate(() -> {
+            logger.info("reset!!! this second have sent {} messages.", msgCnt.intValue());
             msgCnt.set(0);
-            logger.info("reset!!! this second have sent %s messages.", msgCnt.intValue());
         }, 1, 1, TimeUnit.SECONDS);
 
-        sheduler.scheduleAtFixedRate(() -> {
+        reloader.scheduleAtFixedRate(() -> {
             Config config = ConfigFactory.parseFile(new File("conf/application.conf")).resolve();
             synchronized (Boot.class) {
                 frequency = config.getInt("test-cases.frequency");
